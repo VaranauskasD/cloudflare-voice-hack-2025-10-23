@@ -165,6 +165,123 @@ export const POST = async (request: Request) => {
           ? currentConversation 
           : getCombinedConversation(sessionId);
         
+        // Generate dynamic sales tips based on user input
+        const generateSalesTips = (userInput: string) => {
+          const input = userInput.toLowerCase();
+          
+          // Analyze user input and generate contextual tips
+          let tips = [];
+          
+          if (input.includes('budget') || input.includes('cost') || input.includes('price')) {
+            tips = [
+              {
+                strategy: 'Budget Discovery Strategy',
+                focus: 'Understanding budget constraints and value perception',
+                question: "What's your current budget range for solving this problem?",
+                followUp: "How much is this issue costing you in lost productivity or revenue?"
+              },
+              {
+                strategy: 'Value Framing Strategy',
+                focus: 'Reframing cost as investment in outcomes',
+                question: "What would it be worth to you to have this problem completely solved?",
+                followUp: "Can you help me understand the ROI you're looking for?"
+              },
+              {
+                strategy: 'Decision Process Strategy',
+                focus: 'Understanding approval and timeline',
+                question: "Who else would be involved in the budget decision?",
+                followUp: "What's your ideal timeline for implementing a solution?"
+              }
+            ];
+          } else if (input.includes('problem') || input.includes('issue') || input.includes('challenge')) {
+            tips = [
+              {
+                strategy: 'Pain Discovery Strategy',
+                focus: 'Understanding the root cause and impact',
+                question: "What's the biggest challenge you're facing with that?",
+                followUp: "How is this affecting your team's productivity?"
+              },
+              {
+                strategy: 'Impact Quantification Strategy',
+                focus: 'Measuring the cost of inaction',
+                question: "What happens if this problem continues for another month?",
+                followUp: "How much time does your team spend dealing with this issue?"
+              },
+              {
+                strategy: 'Solution Vision Strategy',
+                focus: 'Painting the picture of success',
+                question: "What would success look like for you?",
+                followUp: "How would your day be different if this was completely solved?"
+              }
+            ];
+          } else if (input.includes('interested') || input.includes('like') || input.includes('want')) {
+            tips = [
+              {
+                strategy: 'Interest Validation Strategy',
+                focus: 'Confirming genuine interest and need',
+                question: "What specifically interests you most about our solution?",
+                followUp: "What's driving your interest in exploring this now?"
+              },
+              {
+                strategy: 'Decision Criteria Strategy',
+                focus: 'Understanding what matters most',
+                question: "What would you need to see to move forward?",
+                followUp: "What's most important to you in evaluating solutions?"
+              },
+              {
+                strategy: 'Next Steps Strategy',
+                focus: 'Securing commitment and timeline',
+                question: "Who else would be involved in this decision?",
+                followUp: "What would be the ideal next step for you?"
+              }
+            ];
+          } else {
+            // Default tips for general conversation
+            tips = [
+              {
+                strategy: 'Diagnostic Strategy',
+                focus: 'Understanding pain and impact',
+                question: "What's the biggest challenge you're facing with that?",
+                followUp: "How is this affecting your team's productivity?"
+              },
+              {
+                strategy: 'Vision Strategy', 
+                focus: 'Future state and desired outcomes',
+                question: "What would success look like for you?",
+                followUp: "How would your day be different if this was solved?"
+              },
+              {
+                strategy: 'Action Strategy',
+                focus: 'Next steps and commitment',
+                question: "What would you need to see to move forward?",
+                followUp: "When would you ideally like to have this resolved by?"
+              }
+            ];
+          }
+          
+          return {
+            type: 'sales_tips',
+            tips,
+            context: `Based on: "${userText}"`,
+            timestamp: new Date().toISOString(),
+            analysis: `Detected ${input.includes('budget') ? 'budget' : input.includes('problem') ? 'problem' : input.includes('interested') ? 'interest' : 'general'} conversation`
+          };
+        };
+        
+        const salesTips = generateSalesTips(userText);
+        
+        // Send tips in the requested format
+        stream.data({
+          status: 'tips',
+          tips: salesTips.tips,
+          context: salesTips.context,
+          analysis: salesTips.analysis,
+          timestamp: salesTips.timestamp
+        });
+        
+        // Also send the original format for backward compatibility
+        stream.data(salesTips);
+
         const { textStream } = streamText({
           model: openai('gpt-4o-mini'),
           system: SYSTEM_PROMPT,

@@ -10,6 +10,7 @@ import PromptPane from './PromptPane';
 import SpectrumVisualizer from './SpectrumVisualizer';
 import TranscriptConsole from './TranscriptConsole';
 import PushToTalkButton from './PushToTalkButton';
+import SalesTipsModal from './SalesTipsModal';
 
 export default function VoiceAgent() {
   const agentId = process.env.NEXT_PUBLIC_LAYERCODE_AGENT_ID as string;
@@ -19,6 +20,8 @@ export default function VoiceAgent() {
   const [isConnected, setIsConnected] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isPushToTalk, setIsPushToTalk] = useState(false);
+  const [showSalesTips, setShowSalesTips] = useState(false);
+  const [salesTipsData, setSalesTipsData] = useState<any>(null);
   const playNotify = usePlayNotify('/notify1.wav', { volume: 0.8 });
   const userTranscriptChunksRef = useRef<TranscriptCache>(new Map());
 
@@ -77,7 +80,35 @@ export default function VoiceAgent() {
         }
       }
     },
-    onDataMessage: (data: DataMessage) => setIsThinking(data.content.isThinking)
+    onDataMessage: (data: any) => {
+      console.log('Received data message:', data);
+      
+      // Handle thinking state
+      if (data.content?.isThinking !== undefined) {
+        setIsThinking(data.content.isThinking);
+      }
+      
+      // Handle sales tips - both new format and original format
+      if (data.status === 'tips' || data.type === 'sales_tips') {
+        // Convert the new format to the expected format
+        const tipsData = data.status === 'tips' ? {
+          type: 'sales_tips',
+          tips: data.tips,
+          context: data.context,
+          analysis: data.analysis,
+          timestamp: data.timestamp
+        } : data;
+        
+        setSalesTipsData(tipsData);
+        setShowSalesTips(true);
+        // Add a notification to the messages
+        setMessages((prev) => [...prev, { 
+          role: 'data', 
+          text: `🎯 Sales tips generated! Click to view strategies.`, 
+          ts: Date.now() 
+        }]);
+      }
+    }
   });
 
   useEffect(() => {
@@ -185,6 +216,25 @@ export default function VoiceAgent() {
       <div className="rounded-md border border-neutral-800 overflow-hidden w-full max-w-full min-w-0">
         <PromptPane />
       </div>
+
+      {/* Sales Tips Button */}
+      {salesTipsData && !showSalesTips && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setShowSalesTips(true)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            🎯 View Sales Tips
+          </button>
+        </div>
+      )}
+
+      {/* Sales Tips Modal */}
+      <SalesTipsModal
+        isOpen={showSalesTips}
+        onClose={() => setShowSalesTips(false)}
+        salesTips={salesTipsData}
+      />
     </div>
   );
 }
