@@ -4,12 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:channel-a": "mv .env .env.backup 2>/dev/null || true && cp .env.channel-a .env.local && NEXT_PUBLIC_CHANNEL_ID=channel_a next dev --turbopack --port 3000",
+    "dev:channel-b": "mv .env .env.backup 2>/dev/null || true && cp .env.channel-b .env.local && NEXT_PUBLIC_CHANNEL_ID=channel_b next dev --turbopack --port 3001",
     "build": "next build",
     "start": "next start",
+    "start:channel-a": "cp .env.channel-a .env.local && NEXT_PUBLIC_CHANNEL_ID=channel_a next start --port 3000",
+    "start:channel-b": "cp .env.channel-b .env.local && NEXT_PUBLIC_CHANNEL_ID=channel_b next start --port 3001",
     "lint": "next lint",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
+    "restore-env": "mv .env.backup .env 2>/dev/null || true"
   },
   "dependencies": {
     "@ai-sdk/openai": "2.0.27",
